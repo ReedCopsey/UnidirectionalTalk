@@ -280,8 +280,8 @@ Via https://code.msdn.microsoft.com/windowsdesktop/Simple-Calculator-d1d8cf4c
 
 ### Thank you!
 
-* https://github.com/ReedCopsey/Gjallarhorn.Bindable
+- <a href="https://github.com/ReedCopsey/Gjallarhorn.Bindable"><img src="images/logo.png" width="100" style="vertical-align: middle;"/> https://github.com/ReedCopsey/Gjallarhorn.Bindable </a>
 
-* Twitter: [@ReedCopsey](https://twitter.com/ReedCopsey) 
+- <a href="https://twitter.com/ReedCopsey"><img src="images/ReedCopseyJr.jpeg" width="100" style="vertical-align: middle;"/> @ReedCopsey </a>
 
-* <a href="http://fsharp.org"><img src="images/fsharp256.png" width="100" style="float: left; margin: -10px 15px 15px 0px;"/> http://fsharp.org</a>  
+- <a href="http://fsharp.org"><img src="images/fsharp256.png" width="100" style="vertical-align: middle;"/> http://fsharp.org</a>  
