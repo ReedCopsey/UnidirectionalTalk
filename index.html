@@ -1,0 +1,483 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Bringing unidirectional architecture to XAML platforms</title>
+    <meta name="description" content="Introduction to Gjallarhorn for Unidirectional XAML">
+    <meta name="author" content="Reed Copsey, Jr.">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="//code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="//code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/night.css" id="theme">
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/style.css" />
+    <link type="text/css" rel="stylesheet" href="fsharp.formatting/styles/deedle.css" />
+    <link type="text/css" rel="stylesheet" href="css/custom.css" />
+    <script src="fsharp.formatting/styles/tips.js" type="text/javascript"></script>
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+    <link rel="stylesheet" href="css/fsreveal.css">
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+    </script>
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+    <script language="javascript" type="text/javascript">
+        function init()
+        {
+            websocket = new WebSocket("ws://"+window.location.host+"/websocket");
+            websocket.onmessage = function(evt) { location.reload(); };
+        }
+        window.addEventListener("load", init, false);
+    </script>
+</head>
+<body>
+    <div class="reveal">
+        <div class="tip" id="fs1">Multiple items<br />val int : value:&#39;T -&gt; int (requires member op_Explicit)<br /><br />Full name: Microsoft.FSharp.Core.Operators.int<br /><br />--------------------<br />type int = int32<br /><br />Full name: Microsoft.FSharp.Core.int<br /><br />--------------------<br />type int&lt;&#39;Measure&gt; = int<br /><br />Full name: Microsoft.FSharp.Core.int&lt;_&gt;</div>
+<div class="tip" id="fs2">val min : e1:&#39;T -&gt; e2:&#39;T -&gt; &#39;T (requires comparison)<br /><br />Full name: Microsoft.FSharp.Core.Operators.min</div>
+<div class="tip" id="fs3">val max : e1:&#39;T -&gt; e2:&#39;T -&gt; &#39;T (requires comparison)<br /><br />Full name: Microsoft.FSharp.Core.Operators.max</div>
+
+        <!-- Any section element inside of this container is displayed as a slide -->
+        <div class="slides">
+            <section >
+<h2>Goodbye MVVM!</h2>
+<br />
+<br />
+<h3>Bringing unidirectional architecture to XAML platforms</h3>
+<p><br />
+<br />
+Reed Copsey, Jr. - <a href="https://www.twitter.com/ReedCopsey">@ReedCopsey</a></p>
+</section>
+<section >
+<section >
+<h3>UI in .NET</h3>
+<p>First, there was WinForms</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">private</span> <span class="k">void</span> <span class="i">btnLogin_Click</span>( <span class="i">object</span> <span class="i">sender</span>, <span class="i">EventArgs</span> <span class="i">e</span> ) 
+    { 
+    <span class="i">Login</span>(); 
+    } 
+
+<span class="k">private</span> <span class="k">void</span> <span class="i">Login</span>() 
+    { 
+
+    <span class="k">if</span> ( <span class="i">tbPassword</span><span class="o">.</span><span class="i">Text</span><span class="o">.</span><span class="i">Length</span> <span class="o">&gt;</span> <span class="n">0</span> <span class="o">&amp;&amp;</span> <span class="i">tbUsername</span><span class="o">.</span><span class="i">Text</span><span class="o">.</span><span class="i">Length</span> <span class="o">&gt;</span> <span class="n">0</span> ) 
+        { 
+        <span class="k">if</span> ( <span class="i">UserAuthenticated</span>( <span class="i">tbUsername</span><span class="o">.</span><span class="i">Text</span>, <span class="i">tbPassword</span><span class="o">.</span><span class="i">Text</span> ) ) 
+            { 
+            <span class="i">Authenticated</span> <span class="o">=</span> <span class="k">true</span>; 
+            <span class="i">this</span><span class="o">.</span><span class="i">Close</span>(); <span class="c">// close this form - do not exit the application </span>
+        <span class="c">//...</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Via <a href="https://code.msdn.microsoft.com/windowsdesktop/CCS-LABS-C-Creating-a-9ba05613">https://code.msdn.microsoft.com/windowsdesktop/CCS-LABS-C-Creating-a-9ba05613</a></p>
+</section>
+<section >
+<h3>WinForms</h3>
+<p><img src="images/scream.jpg" style="background: transparent; border-style: none;"  width=700 /></p>
+</section>
+<section >
+<h3>WinForms</h3>
+<ul>
+<li>
+Making sense of WinForms
+<ul>
+<li>MVC</li>
+<li>MVP</li>
+<li>MVSpaghetti</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>WPF</h3>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">private</span> <span class="k">void</span> <span class="i">Button_Click_1</span>(<span class="i">object</span> <span class="i">sender</span>, <span class="i">RoutedEventArgs</span> <span class="i">e</span>) 
+    { 
+        <span class="i">Button</span> <span class="i">b</span> <span class="o">=</span> (<span class="i">Button</span>) <span class="i">sender</span>; 
+        <span class="i">tb</span><span class="o">.</span><span class="i">Text</span> <span class="o">+=</span> <span class="i">b</span><span class="o">.</span><span class="i">Content</span><span class="o">.</span><span class="i">ToString</span>(); 
+    } 
+
+<span class="k">private</span> <span class="k">void</span> <span class="i">Off_Click_1</span>(<span class="i">object</span> <span class="i">sender</span>, <span class="i">RoutedEventArgs</span> <span class="i">e</span>) 
+    { 
+        <span class="c">//to close the app </span>
+        <span class="i">Application</span><span class="o">.</span><span class="i">Current</span><span class="o">.</span><span class="i">Shutdown</span>(); 
+    }
+</code></pre></td>
+</tr>
+</table>
+<p>Via <a href="https://code.msdn.microsoft.com/windowsdesktop/Simple-Calculator-d1d8cf4c">https://code.msdn.microsoft.com/windowsdesktop/Simple-Calculator-d1d8cf4c</a></p>
+</section>
+<section >
+<h3>WPF</h3>
+<ul>
+<li>Added XAML - A declarative mechanism to design the UI</li>
+<li>Initially logic handled very much like WinForms</li>
+</ul>
+</section>
+<section >
+<h3>WPF with MVVM</h3>
+<ul>
+<li>Leverage Data Binding capabilities in XAML</li>
+<li>
+Separate Model from UI
+<ul>
+<li>Separate "ViewModel" layer for application logic</li>
+<li>Goal of "View" being near 100% declarative, via XAML</li>
+</ul>
+</li>
+<li>Decoupled Model from VM, and VM from View</li>
+<li>View can change with <em>no code changes at all</em></li>
+</ul>
+</section>
+<section >
+<h3>WPF with MVVM</h3>
+<ul>
+<li>Recommended by most experts</li>
+<li>New samples almost exclusively use pattern</li>
+<li>Xamarin Forms brought XAML and MVVM to mobile</li>
+<li>Life is good!</li>
+</ul>
+</section>
+<section >
+<h3>WPF with MVVM</h3>
+<ul>
+<li>Life is good...? Not quite!</li>
+</ul>
+</section>
+</section>
+<section >
+<section >
+<h3>MVVM is fundamentally flawed</h3>
+<ul>
+<li>
+Everything is based on mutation.
+<ul>
+<li>View Model layer is always going to be mutable</li>
+<li>Edits work via (two way) data binding that set properties</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>MVVM is fundamentally flawed</h3>
+<ul>
+<li>
+Large amount of boilerplate
+<ul>
+<li>Each view usually means a complete class written as VM</li>
+<li>INotifyPropertyChanged, INotifyCollectionChanged, and INotifyDataErrorInfo introduce extra plumbing</li>
+<li>Difficult to reason about, especially when ViewModels need to "communicate"</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>MVVM is fundamentally flawed</h3>
+<ul>
+<li>
+Plumbing requirements for collections become onerous quickly
+<ul>
+<li>Often leads to violations such as making Model mutable with INPC</li>
+<li>Makes application more complicated, more difficult to reason about, etc</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section >
+<section >
+<h3>Breaking out of the bubble</h3>
+<ul>
+<li>
+Look to other front end trends
+<ul>
+<li>React</li>
+<li>Flux</li>
+<li>Redux</li>
+<li>Elm</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>Breaking out of the bubble</h3>
+<ul>
+<li>
+What's common here?
+<ul>
+<li>Unidirectional flow of data</li>
+<li>Virtual DOM</li>
+<li>"View as data"</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section >
+<section >
+<h3>What would it take for the best of both worlds?</h3>
+<ul>
+<li>Keep declarative XAML / Decoupled view layer</li>
+<li>Reactive system</li>
+<li>Low plumbing overhead</li>
+<li>Allow immutable data model</li>
+</ul>
+</section>
+<section >
+<h3>Step one:</h3>
+<ul>
+<li>
+Keep declarative XAML / Decoupled view layer
+<ul>
+<li>Easy: Just keep using XAML</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>Step two:</h3>
+<ul>
+<li>
+Reactive system
+<ul>
+<li>Take inspiration from Rx/IObservable</li>
+<li>Do we need more?</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>Step three:</h3>
+<ul>
+<li>
+Low plumbing overhead
+<ul>
+<li>Good library/framework to wire it all up</li>
+</ul>
+</li>
+</ul>
+</section>
+<section >
+<h3>Step four:</h3>
+<ul>
+<li>
+Allow immutable data model
+<ul>
+<li>Rethinking binding</li>
+<li>What is a property, really?</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section >
+<section >
+<h3>Gjallarhorn's Approach</h3>
+<h4>XAML for Views - Unchanged from MVVM</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="o">&lt;</span><span class="i">TextBlock</span> <span class="i">Grid</span><span class="o">.</span><span class="i">Row</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="i">Grid</span><span class="o">.</span><span class="i">Column</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="i">Margin</span><span class="o">=</span><span class="s">&quot;5&quot;</span><span class="o">&gt;</span><span class="i">Current</span><span class="o">:</span><span class="o">&lt;/</span><span class="i">TextBlock</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="i">TextBox</span> <span class="i">Text</span><span class="o">=</span><span class="s">&quot;{Binding Current, Mode=OneWay}&quot;</span> <span class="i">IsReadOnly</span><span class="o">=</span><span class="s">&quot;True&quot;</span> 
+         <span class="i">Grid</span><span class="o">.</span><span class="i">Row</span><span class="o">=</span><span class="s">&quot;0&quot;</span> <span class="i">Grid</span><span class="o">.</span><span class="i">Column</span><span class="o">=</span><span class="s">&quot;1&quot;</span> <span class="i">Margin</span><span class="o">=</span><span class="s">&quot;5&quot;</span> <span class="o">/&gt;</span>
+
+<span class="o">&lt;</span><span class="i">Button</span>  <span class="i">Command</span><span class="o">=</span><span class="s">&quot;{Binding Increment}&quot;</span> <span class="i">Margin</span><span class="o">=</span><span class="s">&quot;5&quot;</span> <span class="i">Grid</span><span class="o">.</span><span class="i">Row</span><span class="o">=</span><span class="s">&quot;1&quot;</span> 
+         <span class="i">Grid</span><span class="o">.</span><span class="i">Column</span><span class="o">=</span><span class="s">&quot;0&quot;</span><span class="o">&gt;</span><span class="i">Increment</span><span class="o">&lt;/</span><span class="i">Button</span><span class="o">&gt;</span>
+<span class="o">&lt;</span><span class="i">Button</span>  <span class="i">Command</span><span class="o">=</span><span class="s">&quot;{Binding Decrement}&quot;</span> <span class="i">Margin</span><span class="o">=</span><span class="s">&quot;5&quot;</span> <span class="i">Grid</span><span class="o">.</span><span class="i">Row</span><span class="o">=</span><span class="s">&quot;1&quot;</span> 
+         <span class="i">Grid</span><span class="o">.</span><span class="i">Column</span><span class="o">=</span><span class="s">&quot;1&quot;</span><span class="o">&gt;</span><span class="i">Decrement</span><span class="o">&lt;/</span><span class="i">Button</span><span class="o">&gt;</span>
+</code></pre></td>
+</tr>
+</table>
+</section>
+<section >
+<h3>Gjallarhorn's Approach</h3>
+<h4>Model</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Model is a simple integer for counter</span>
+<span class="k">type</span> <span class="i">Model</span> <span class="o">=</span> { <span class="i">Value</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">int</span> }
+</code></pre></td>
+</tr>
+</table>
+</section>
+<section >
+<h3>Gjallarhorn's Approach</h3>
+<h4>Message and Update</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// We define a union type for each possible message</span>
+<span class="k">type</span> <span class="i">Msg</span> <span class="o">=</span> 
+    | <span class="i">Increment</span> 
+    | <span class="i">Decrement</span>
+
+<span class="c">// Create a function that updates the model given a message</span>
+<span class="k">let</span> <span class="i">update</span> <span class="i">msg</span> <span class="i">model</span> <span class="o">=</span>
+    <span class="k">match</span> <span class="i">msg</span> <span class="k">with</span>
+    | <span class="i">Increment</span> <span class="k">-&gt;</span> { <span class="i">Value</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">min</span> <span class="n">10</span> (<span class="i">model</span><span class="o">.</span><span class="i">Value</span> <span class="o">+</span> <span class="n">1</span>) }
+    | <span class="i">Decrement</span> <span class="k">-&gt;</span> { <span class="i">Value</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="i">max</span> <span class="n">0</span> (<span class="i">model</span><span class="o">.</span><span class="i">Value</span> <span class="o">-</span> <span class="n">1</span>) }
+</code></pre></td>
+</tr>
+</table>
+</section>
+<section >
+<h3>Gjallarhorn's Approach</h3>
+<h4>(Optional) ViewModel</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="c">// Our &quot;ViewModel&quot; </span>
+<span class="k">type</span> <span class="i">ViewModel</span> <span class="o">=</span> 
+    {
+        <span class="i">Current</span> <span class="o">:</span> <span onmouseout="hideTip(event, 'fs1', 4)" onmouseover="showTip(event, 'fs1', 4)" class="i">int</span> 
+        <span class="i">Increment</span> <span class="o">:</span> <span class="i">VmCmd</span><span class="o">&lt;</span><span class="i">Msg</span><span class="o">&gt;</span>
+        <span class="i">Decrement</span> <span class="o">:</span> <span class="i">VmCmd</span><span class="o">&lt;</span><span class="i">Msg</span><span class="o">&gt;</span>
+    }        
+<span class="k">let</span> <span class="i">d</span> <span class="o">=</span> { <span class="i">Current</span> <span class="o">=</span> <span class="n">5</span> ; <span class="i">Increment</span> <span class="o">=</span> <span class="i">Vm</span><span class="o">.</span><span class="i">cmd</span> <span class="i">Increment</span>; <span class="i">Decrement</span> <span class="o">=</span> <span class="i">Vm</span><span class="o">.</span><span class="i">cmd</span> <span class="i">Decrement</span> }
+</code></pre></td>
+</tr>
+</table>
+</section>
+<section >
+<h3>Gjallarhorn's Approach</h3>
+<h4>View Binding</h4>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span class="i">bindToSource</span> <span class="o">=</span>                   
+    <span class="i">Component</span><span class="o">.</span><span class="i">fromBindings</span> [
+        &lt;@ <span class="i">d</span><span class="o">.</span><span class="i">Current</span>    @&gt; <span class="o">|&gt;</span> <span class="i">Bind</span><span class="o">.</span><span class="i">oneWay</span> (<span class="k">fun</span> <span class="i">m</span> <span class="k">-&gt;</span> <span class="i">m</span><span class="o">.</span><span class="i">Value</span>)
+        &lt;@ <span class="i">d</span><span class="o">.</span><span class="i">Increment</span>  @&gt; <span class="o">|&gt;</span> <span class="i">Bind</span><span class="o">.</span><span class="i">cmdIf</span> (<span class="k">fun</span> <span class="i">m</span> <span class="k">-&gt;</span> <span class="i">m</span><span class="o">.</span><span class="i">Value</span> <span class="o">&lt;</span> <span class="n">10</span>)
+        &lt;@ <span class="i">d</span><span class="o">.</span><span class="i">Decrement</span>  @&gt; <span class="o">|&gt;</span> <span class="i">Bind</span><span class="o">.</span><span class="i">cmdIf</span> (<span class="k">fun</span> <span class="i">m</span> <span class="k">-&gt;</span> <span class="i">m</span><span class="o">.</span><span class="i">Value</span> <span class="o">&gt;</span> <span class="n">0</span>)
+    ]         
+</code></pre></td>
+</tr>
+</table>
+</section>
+<section >
+<h3>Demo</h3>
+<h4>Demo of Gjallarhorn</h4>
+<p><img src="images/logo.png"/></p>
+</section>
+</section>
+<section >
+<h3>TakeAways</h3>
+<ul>
+<li>There are other options than MVVM, with huge advantages</li>
+<li>Learn all the FP you can!</li>
+<li>Simple modular design</li>
+</ul>
+</section>
+<section >
+<h3>Thank you!</h3>
+<ul>
+<li><p><a href="https://github.com/ReedCopsey/Gjallarhorn.Bindable">https://github.com/ReedCopsey/Gjallarhorn.Bindable</a></p></li>
+<li><p>Twitter: <a href="https://twitter.com/ReedCopsey">@ReedCopsey</a></p></li>
+<li><a href="http://fsharp.org"><img src="images/fsharp256.png" width="100" style="float: left; margin: -10px 15px 15px 0px;"/> http://fsharp.org</a>  </li>
+</ul>
+</section>
+
+
+        </div>
+    </div>
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+    <script>
+        // Add the nohighlight class and data-noescape attribute to code elements that have already been formatted by FSharp.Formatting
+        $('pre.highlighted code').addClass('nohighlight').attr('data-noescape', '');
+
+        // Full list of configuration options available here:
+        // https://github.com/hakimel/reveal.js#configuration
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            history: true,
+            center: true,
+
+            transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+            // Parallax scrolling
+            // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+            // parallaxBackgroundSize: '2100px 900px',
+
+            // Optional libraries used to extend on reveal.js
+            dependencies: [
+                { src: 'lib/js/classList.js', condition: function () { return !document.body.classList; } },
+                { src: 'plugin/markdown/marked.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/markdown/markdown.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+                { src: 'plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } },
+                { src: 'plugin/zoom-js/zoom.js', async: true, condition: function () { return !!document.body.classList; } },
+                { src: 'plugin/notes/notes.js', async: true, condition: function () { return !!document.body.classList; } }
+            ]
+        });
+
+    </script>
+</body>
+</html>
+
