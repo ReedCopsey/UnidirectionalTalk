@@ -152,208 +152,127 @@ Via https://code.msdn.microsoft.com/windowsdesktop/Simple-Calculator-d1d8cf4c
 
 ***
 
+### What would it take for the best of both worlds?
 
-### Model - View - Update
-
-#### "Elm - Architecture"
-
- <img src="images/Elm.png" style="background: white;" width=700 />
-
-
- <small>http://danielbachler.de/2016/02/11/berlinjs-talk-about-elm.html</small>
-
+- Keep declarative XAML / Decoupled view layer
+- Reactive system
+- Low plumbing overhead
+- Allow immutable data model
 
 --- 
 
-### Model - View - Update
+### Step one: 
 
-    // MODEL
+- Keep declarative XAML / Decoupled view layer
+  - Easy: Just keep using XAML
 
-    type Model = int
+--- 
 
-    type Msg =
-    | Increment
-    | Decrement
-
-    let init() : Model = 0
-
----
-
-### Model - View - Update
-
-    // VIEW
-
-    let view model dispatch =
-        div []
-            [ button [ OnClick (fun _ -> dispatch Decrement) ] [ str "-" ]
-              div [] [ str (model.ToString()) ]
-              button [ OnClick (fun _ -> dispatch Increment) ] [ str "+" ] ]
+### Step two: 
+  
+- Reactive system
+  - Take inspiration from Rx/IObservable
+  - Do we need more?
 
 ---
 
-### Model - View - Update
+### Step three:  
 
-    // UPDATE
+- Low plumbing overhead
+  - Good library/framework to wire it all up
 
-    let update (msg:Msg) (model:Model) =
-        match msg with
-        | Increment -> model + 1
-        | Decrement -> model - 1
+--- 
 
----
+### Step four: 
 
-### Model - View - Update
+- Allow immutable data model
+  - Rethinking binding
+  - What is a property, really?
 
-    // wiring things up
-
-    Program.mkSimple init update view
-    |> Program.withConsoleTrace
-    |> Program.withReact "elmish-app"
-    |> Program.run
-
----
-
-### Model - View - Update
-
-# Demo
 
 ***
 
-### Sub-Components
+### Gjallarhorn's Approach
 
-    // MODEL
+#### XAML for Views - Unchanged from MVVM
 
-    type Model = {
-        Counters : Counter.Model list
-    }
+    <TextBlock Grid.Row="0" Grid.Column="0" Margin="5">Current:</TextBlock>
+    <TextBox Text="{Binding Current, Mode=OneWay}" IsReadOnly="True" 
+             Grid.Row="0" Grid.Column="1" Margin="5" />
 
+    <Button  Command="{Binding Increment}" Margin="5" Grid.Row="1" 
+             Grid.Column="0">Increment</Button>
+    <Button  Command="{Binding Decrement}" Margin="5" Grid.Row="1" 
+             Grid.Column="1">Decrement</Button>
+
+
+---
+
+### Gjallarhorn's Approach
+
+#### Model
+
+    // Model is a simple integer for counter
+    type Model = { Value : int }
+
+---
+
+### Gjallarhorn's Approach
+
+#### Message and Update
+
+    // We define a union type for each possible message
     type Msg = 
-    | Insert
-    | Remove
-    | Modify of int * Counter.Msg
+        | Increment 
+        | Decrement
 
-    let init() : Model =
-        { Counters = [] }
-
----
-
-### Sub-Components
-
-    // VIEW
-
-    let view model dispatch =
-        let counterDispatch i msg = dispatch (Modify (i, msg))
-
-        let counters =
-            model.Counters
-            |> List.mapi (fun i c -> Counter.view c (counterDispatch i)) 
-        
-        div [] [ 
-            yield button [ OnClick (fun _ -> dispatch Remove) ] [  str "Remove" ]
-            yield button [ OnClick (fun _ -> dispatch Insert) ] [ str "Add" ] 
-            yield! counters ]
-
----
-
-### Sub-Components
-
-    // UPDATE
-
-    let update (msg:Msg) (model:Model) =
+    // Create a function that updates the model given a message
+    let update msg model =
         match msg with
-        | Insert ->
-            { Counters = Counter.init() :: model.Counters }
-        | Remove ->
-            { Counters = 
-                match model.Counters with
-                | [] -> []
-                | x :: rest -> rest }
-        | Modify (id, counterMsg) ->
-            { Counters =
-                model.Counters
-                |> List.mapi (fun i counterModel -> 
-                    if i = id then
-                        Counter.update counterMsg counterModel
-                    else
-                        counterModel) }
+        | Increment -> { Value = min 10 (model.Value + 1) }
+        | Decrement -> { Value = max 0 (model.Value - 1) }
 
 ---
 
-### Sub-Components
+### Gjallarhorn's Approach
 
-# Demo
+#### (Optional) ViewModel
 
-***
+    // Our "ViewModel" 
+    type ViewModel = 
+        {
+            Current : int 
+            Increment : VmCmd<Msg>
+            Decrement : VmCmd<Msg>
+        }        
+    let d = { Current = 5 ; Increment = Vm.cmd Increment; Decrement = Vm.cmd Decrement }
 
-### React
+--- 
 
-* Facebook library for UI 
-* <code>state => view</code>
-* Virtual DOM
+### Gjallarhorn's Approach
 
+#### View Binding
+
+    let bindToSource =                   
+        Component.fromBindings [
+            <@ d.Current    @> |> Bind.oneWay (fun m -> m.Value)
+            <@ d.Increment  @> |> Bind.cmdIf (fun m -> m.Value < 10)
+            <@ d.Decrement  @> |> Bind.cmdIf (fun m -> m.Value > 0)
+        ]         
+    
 ---
 
-### Virtual DOM - Initial
+### Demo
 
-<br />
-<br />
+#### Demo of Gjallarhorn
 
-
- <img src="images/onchange_vdom_initial.svg" style="background: white;" />
-
-<br />
-<br />
-
- <small>http://teropa.info/blog/2015/03/02/change-and-its-detection-in-javascript-frameworks.html</small>
-
----
-
-### Virtual DOM - Change
-
-<br />
-<br />
-
-
- <img src="images/onchange_vdom_change.svg" style="background: white;" />
-
-<br />
-<br />
-
- <small>http://teropa.info/blog/2015/03/02/change-and-its-detection-in-javascript-frameworks.html</small>
-
----
-
-### Virtual DOM - Reuse
-
-<br />
-<br />
-
-
- <img src="images/onchange_immutable.svg" style="background: white;" />
-
-<br />
-<br />
-
- <small>http://teropa.info/blog/2015/03/02/change-and-its-detection-in-javascript-frameworks.html</small>
-
-
-*** 
-
-### ReactNative
-
- <img src="images/ReactNative.png" style="background: white;" />
-
-
- <small>http://timbuckley.github.io/react-native-presentation</small>
-
-***
-
-### Show me the code
+ <img src="images/logo.png"/>
 
 *** 
 
 ### TakeAways
 
+* There are other options than MVVM, with huge advantages
 * Learn all the FP you can!
 * Simple modular design
 
@@ -361,6 +280,8 @@ Via https://code.msdn.microsoft.com/windowsdesktop/Simple-Calculator-d1d8cf4c
 
 ### Thank you!
 
-* https://github.com/fable-compiler/fable-elmish
-* https://ionide.io
-* https://facebook.github.io/react-native/
+* https://github.com/ReedCopsey/Gjallarhorn.Bindable
+
+* Twitter: [@ReedCopsey](https://twitter.com/ReedCopsey) 
+
+* <a href="http://fsharp.org"><img src="images/fsharp256.png" width="100" style="float: left; margin: -10px 15px 15px 0px;"/> http://fsharp.org</a>  
